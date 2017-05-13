@@ -1,0 +1,9 @@
+[Service]
+User=www-data
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/littlebro-stream %i
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+[Service]
+User=www-data
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/littlebro-archive
+
+[Install]
+WantedBy=multi-user.target
