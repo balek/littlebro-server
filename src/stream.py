@@ -14,7 +14,7 @@ def main():
 
     (camera_id, stream) = sys.argv[1].rsplit('_', 1)
     camera = list(filter(lambda c: c['id'] == camera_id, conf['cameras']))[0]
-    args = conf['ffmpeg_path'] + ' -loglevel fatal '
+    args = conf['ffmpeg_path'] + ' -loglevel error '
 
     if camera.get('capture'):
         capture = camera['capture']
@@ -36,12 +36,27 @@ def main():
         if stream_url.startswith('/'):
             ip = camera.get('ip')
             if not ip:
-                ip = socket.gethostbyname('cam-' + camera['id'])
-            stream_url = 'rtsp://' + camera['credentials']['username'] + ':' + camera['credentials']['password'] + '@' + ip + stream_url
+                ip = socket.gethostbyname(conf['host_prefix'] + camera['id'])
+            stream_url = 'rtsp://'
+            if camera.get('username'):
+                stream_url += camera['username']
+                if camera.get('password'):
+                    stream_url += ':' + camera['password']
+                stream_url += '@'
+            stream_url += ip
+            if camera.get('port'):
+                stream_url += ':%i' % camera['port']
         args += '-i %s -c:v copy -c:a aac -b:a 24k ' % stream_url
-    hls_path = os.path.join(conf['hls_path'], sys.argv[1] + '.m3u8')
+    hls_path = os.path.join(conf['hls_dir'], sys.argv[1] + '.m3u8')
     args += '-hls_time 2 -hls_flags delete_segments ' + hls_path
 
-    # TODO: rm -f /tmp/littlebro/%i*
+    try:
+        os.mkdir(conf['hls_dir'])
+    except FileExistsError: pass
+
+    for f in os.listdir(conf['hls_dir']):
+        if not f.startswith(sys.argv[1]):
+            continue
+        os.unlink(os.path.join(conf['hls_dir'], f))
 
     os.execv(conf['ffmpeg_path'], args.split())

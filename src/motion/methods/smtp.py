@@ -4,12 +4,6 @@ from functools import partial
 
 from aiosmtpd.smtp import SMTP
 
-from littlebro_server.config import conf
-from .. import cameras, handle_motion
-
-
-camera_regex = re.compile('^Alarm input channel No.: ([-\w]+)', re.MULTILINE)
-
 
 class MessageHandler:
     def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
@@ -30,7 +24,16 @@ class AuthSmtp(SMTP):
         await self.push('235 ok')
 
 
-def start():
+def start(c, cams, cb):
+    global conf, cameras, handle_motion, camera_regex, server
+    conf = c
+    cameras = cams
+    handle_motion = cb
+    pattern = conf.get('pattern', '^Alarm input channel No.: ([-\w]+)')
+    camera_regex = re.compile(pattern, re.MULTILINE)
     loop = asyncio.get_event_loop()
     factory = partial(AuthSmtp, MessageHandler())
-    return loop.create_server(factory, '0.0.0.0', conf['smtp_port'])
+    server = loop.create_server(factory, '0.0.0.0', conf.get('port', 25))
+
+def stop():
+    server.close()

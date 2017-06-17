@@ -13,6 +13,12 @@ def main():
 
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('127.0.0.1', conf['motion_port']))
+    for method in conf['motion_methods']:
+        if method['type'] == 'tcp':
+            port = method['port']
+            break
+    else:
+        raise Exception('motion method "tcp" not found')
+    s.connect(('127.0.0.1', port))
     s.send(sys.argv[1].encode())
     s.close()
