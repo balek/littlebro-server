@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name = 'littlebro-server',
@@ -9,8 +9,7 @@ setup(
     url = 'https://github.com/balek/littlebro-server',
     license = 'AGPL-3.0',
 
-    package_dir = {'littlebro_server': 'src'},
-    packages = ['littlebro_server'],
+    packages = find_packages(),
 
     entry_points = {
         'console_scripts': [
