@@ -15,21 +15,28 @@ async def start_camera(camera):
         url = 'http://'
         url += camera['ip']
         if conf.get('hikvision_port'):
-            url += ':%i' % hikvision_port
+            url += ':%i' % conf.get('hikvision_port')
         url += '/ISAPI/Event/notification/alertStream'
-        async with client.get(url) as resp:
-            reader = aiohttp.MultipartReader.from_response(resp)
-            while True:
-                part = await reader.next()
-                part._length = None
-                if part is None:
-                    break
-                root = ET.fromstring(await part.read())
-                eventType = root.find('hik:eventType', ns).text
-                if (eventType != 'VMD'):
-                    continue
-                print(ET.tostring(root, encoding='unicode'), '\n\n')
-                asyncio.ensure_future(handle_motion(camera))
+        while True:
+            try:
+                async with client.get(url, timeout=10) as resp:
+                    reader = aiohttp.MultipartReader.from_response(resp)
+                    while True:
+                        part = await reader.next()
+                        part._length = None
+                        if part is None:
+                            break
+                        root = ET.fromstring(await part.read())
+                        eventType = root.find('hik:eventType', ns).text
+                        if (eventType != 'VMD'):
+                            continue
+                        asyncio.ensure_future(handle_motion(camera))
+            except asyncio.CancelledError: raise
+            except TimeoutError as ex:
+                print('TimeoutError')
+            except Exception as ex:
+                print(type(ex).__name__, ex)
+                await asyncio.sleep(10)
 
 
 def start(c, cams, cb):

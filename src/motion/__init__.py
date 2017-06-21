@@ -112,8 +112,5 @@ def main():
         if camera['stop_recording_timer']:
             camera['stop_recording_timer'].cancel()
 
-    for t in asyncio.Task.all_tasks():
-        print(t)
-
     loop.run_until_complete(asyncio.wait(asyncio.Task.all_tasks()))
     loop.close()
