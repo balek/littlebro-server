@@ -26,7 +26,7 @@ async def handle_motion(camera):
         os.makedirs(output_dir_path)
     except FileExistsError: pass
     output_path = os.path.join(output_dir_path, now.strftime('%H-%M-%S.mp4'))
-    command = conf['ffmpeg_path'] + ' -y -loglevel warning -i ' + camera['hls_path'] + ' -ss 4 -bsf:a aac_adtstoasc -c copy -movflags faststart ' + output_path
+    command = conf['ffmpeg_path'] + ' -y -loglevel error -i ' + camera['hls_path'] + ' -ss 4 -bsf:a aac_adtstoasc -c copy -movflags faststart ' + output_path
     process = await asyncio.create_subprocess_exec(*command.split(), stdin=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
     limit_recording_timer = asyncio.ensure_future(asyncio.sleep(60*30))
     wait_process = asyncio.ensure_future(process.wait())
