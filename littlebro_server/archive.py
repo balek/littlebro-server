@@ -15,15 +15,6 @@ RECORD_PATH_FORMAT = re.compile('(\d{4})-(\d\d)-(\d\d)/([^/]+)/(\d\d)-(\d\d)-(\d
 
 
 def dump_archive(archive, date=None):
-    cameras_file = os.path.join(conf['archive_path'], 'cameras.json')
-    f = open(cameras_file, 'w')
-    for c in conf['cameras']:
-        c['archive'] = []
-        for d in archive:
-            if archive[d].get(c['id']):
-                c['archive'].append(d)
-    json.dump(conf['cameras'], f)
-    f.close()
     for d in archive:
         if date and d != date:
             continue

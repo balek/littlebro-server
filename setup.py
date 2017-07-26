@@ -19,9 +19,8 @@ setup(
             'littlebro-trigger = littlebro_server.trigger:main',
         ],
     },
-    install_requires = ['pyinotify'],
+    install_requires = ['aiohttp', 'pyinotify'],
     extras_require = {
         'SMTP':  ['aiosmtpd'],
-        'Hikvision': ['aiohttp'],
     }
 )
