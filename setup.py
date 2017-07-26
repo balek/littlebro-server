@@ -13,6 +13,7 @@ setup(
 
     entry_points = {
         'console_scripts': [
+            'littlebro-http = littlebro_server.http:main',
             'littlebro-archive = littlebro_server.archive:main',
             'littlebro-motion = littlebro_server.motion:main',
             'littlebro-stream = littlebro_server.stream:main',
