@@ -45,7 +45,7 @@ async def handle_motion(camera):
         output, errput = await asyncio.wait_for(process.communicate('q'.encode()), 120)
     except asyncio.TimeoutError:
         print('Could not finish ffmpeg with "q"')
-        process.terminate()
+        process.kill()
         return
     if process.returncode:
         print('ffmpeg Stopped with error', process.returncode)
