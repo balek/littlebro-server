@@ -11,7 +11,7 @@ async def start_camera(camera):
     username = camera.get('username', '')
     password = camera.get('password', '')
     auth = aiohttp.BasicAuth(username, password)
-    async with aiohttp.ClientSession(auth=auth) as client:
+    async with aiohttp.ClientSession(auth=auth, conn_timeout=10, read_timeout=0) as client:
         url = 'http://'
         url += camera['ip']
         if conf.get('hikvision_port'):
@@ -19,7 +19,7 @@ async def start_camera(camera):
         url += '/ISAPI/Event/notification/alertStream'
         while True:
             try:
-                async with client.get(url, timeout=10) as resp:
+                async with client.get(url) as resp:
                     reader = aiohttp.MultipartReader.from_response(resp)
                     while True:
                         part = await reader.next()
@@ -33,7 +33,7 @@ async def start_camera(camera):
                         asyncio.ensure_future(handle_motion(camera))
             except asyncio.CancelledError: raise
             except TimeoutError as ex:
-                print('TimeoutError')
+                print('TimeoutError', camera['id'], camera['ip'])
             except Exception as ex:
                 print(type(ex).__name__, ex)
                 await asyncio.sleep(10)
