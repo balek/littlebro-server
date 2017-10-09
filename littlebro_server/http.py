@@ -64,7 +64,7 @@ async def middleware(app, handler):
         connector = aiohttp.TCPConnector(ttl_dns_cache=None)
         async with aiohttp.ClientSession(connector=connector) as client:
             for url in conf['viewers']:
-                if request.headers['Referer'].startswith(url):
+                if request.headers.get('Referer', '').startswith(url):
                     break
             else:
                 raise HTTPForbidden()
