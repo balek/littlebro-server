@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'littlebro-server',
-    version = '0.4.1',
+    version = '0.4.2',
     description = 'CCTV system',
     author = 'Alexey Balekhov',
     author_email = 'a@balek.ru',
