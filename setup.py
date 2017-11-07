@@ -20,7 +20,7 @@ setup(
             'littlebro-trigger = littlebro_server.trigger:main',
         ],
     },
-    install_requires = ['aiohttp', 'pyinotify'],
+    install_requires = ['aiohttp', 'aiohttp_session', 'pyjwt', 'pyinotify'],
     extras_require = {
         'SMTP':  ['aiosmtpd'],
     }
