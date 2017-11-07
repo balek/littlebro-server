@@ -91,7 +91,7 @@ async def middleware(app, handler):
         token = request.headers.get('X-Access-Token')
         if token:
             try:
-                data = jwt.decode(token, conf.secret)
+                data = jwt.decode(token, conf['secret'])
                 session['user_groups'] = data.get('groups', [])
                 session['expires'] = time.time() + session.max_age
             except jwt.InvalidTokenError: pass
