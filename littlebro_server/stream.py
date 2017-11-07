@@ -47,7 +47,12 @@ def main():
             if camera.get('port'):
                 stream_url += ':%i' % camera['port']
             stream_url += camera['streams'][stream]
-        args += '-i %s -c:v copy -c:a aac -b:a 24k ' % stream_url
+        args += '-i %s ' % stream_url
+        args += '-c:v copy '
+        af = camera.get('audio_filter', 'highpass=f=200,lowpass=f=1200')
+        if af:
+            args += '-af %s ' % af
+        args += '-c:a aac -b:a 24k '
     hls_path = os.path.join(conf['hls_dir'], sys.argv[1] + '.m3u8')
     args += '-hls_time 2 -hls_flags delete_segments ' + hls_path
 
