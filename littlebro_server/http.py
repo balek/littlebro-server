@@ -70,38 +70,42 @@ async def close_session(request):
     return web.Response()
 
 
-async def cors_middleware(app, handler):
-    async def middleware_handler(request):
-        origin = request.headers.get('Origin')
-        if request.method == 'OPTIONS':
-            response = web.Response()
-        else:
-            response = await handler(request)
-        if origin:
-            response.headers['Access-Control-Allow-Origin'] = origin
-            response.headers['Access-Control-Allow-Headers'] = request.headers.get('Access-Control-Request-Headers', '')
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-        return response
-    return middleware_handler
-
-
-async def middleware(app, handler):
-    async def middleware_handler(request):
-        session = await aiohttp_session.get_session(request)
-        token = request.headers.get('X-Access-Token')
-        if token:
-            try:
-                data = jwt.decode(token, conf['secret'])
-                session['user_groups'] = data.get('groups', [])
-                session['expires'] = time.time() + session.max_age
-            except jwt.InvalidTokenError: pass
-
-        if session.get('expires', 0) < time.time():
+@web.middleware
+async def cors_middleware(request, handler):
+    origin = request.headers.get('Origin')
+    if request.method == 'OPTIONS':
+        if origin not in conf['viewers']:
             raise web.HTTPForbidden()
+        response = web.Response()
+    else:
+        try:
+            response = await handler(request)
+        except web.HTTPException as e:
+            response = e
+    if origin in conf['viewers']:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Headers'] = request.headers.get('Access-Control-Request-Headers', '')
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    if isinstance(response, web.HTTPException):
+        raise response
+    return response
 
-        return await handler(request)
 
-    return middleware_handler
+@web.middleware
+async def middleware(request, handler):
+    session = await aiohttp_session.get_session(request)
+    token = request.headers.get('X-Access-Token')
+    if token:
+        try:
+            data = jwt.decode(token, conf['secret'])
+            session['user_groups'] = data.get('groups', [])
+            session['expires'] = time.time() + session.max_age
+        except jwt.InvalidTokenError: pass
+
+    if session.get('expires', 0) < time.time():
+        raise web.HTTPForbidden()
+
+    return await handler(request)
 
 
 class MemorySessionStorage(aiohttp_session.AbstractStorage):
