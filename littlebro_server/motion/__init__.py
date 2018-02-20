@@ -15,8 +15,10 @@ loop = asyncio.get_event_loop()
 
 
 async def handle_motion(camera):
-    if camera['stop_recording_timer']:
+    if camera.get('stop_recording_timer'):
         camera['stop_recording_timer'].cancel()
+        return
+    if camera.get('limit_recording_timer'):
         return
 
     now = datetime.now() - timedelta(seconds=3)
@@ -27,12 +29,12 @@ async def handle_motion(camera):
     except FileExistsError: pass
     output_path = os.path.join(output_dir_path, now.strftime('%H-%M-%S.mp4'))
     command = conf['ffmpeg_path'] + ' -y -loglevel error -i ' + camera['hls_path'] + ' -ss 4 -bsf:a aac_adtstoasc -c copy -movflags faststart ' + output_path
+    camera['limit_recording_timer'] = asyncio.ensure_future(asyncio.sleep(60*30))
     process = await asyncio.create_subprocess_exec(*command.split(), stdin=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
-    limit_recording_timer = asyncio.ensure_future(asyncio.sleep(60*30))
     wait_process = asyncio.ensure_future(process.wait())
     while True:
         camera['stop_recording_timer'] = asyncio.ensure_future(asyncio.sleep(30))
-        stop_conditions = [camera['stop_recording_timer'], limit_recording_timer, wait_process]
+        stop_conditions = [camera['stop_recording_timer'], camera['limit_recording_timer'], wait_process]
         done, pending = await asyncio.wait(stop_conditions, return_when=asyncio.FIRST_COMPLETED)
         if camera['stop_recording_timer'].cancelled() and not exit_flag:
             continue
@@ -40,6 +42,7 @@ async def handle_motion(camera):
             t.cancel()
         # await asyncio.wait(pending)
         break
+    camera['limit_recording_timer'] = None
     camera['stop_recording_timer'] = None
     try:
         output, errput = await asyncio.wait_for(process.communicate('q'.encode()), 120)
@@ -74,8 +77,6 @@ def check_free_space_in_executor():
 
 cameras = conf['cameras']
 for camera in cameras:
-    camera['stop_recording_timer'] = None
-
     if camera.get('streams', {}).get('main'):
         stream = 'main'
     else:
@@ -109,7 +110,7 @@ def main():
         module.stop()
 
     for camera in cameras:
-        if camera['stop_recording_timer']:
+        if camera.get('stop_recording_timer'):
             camera['stop_recording_timer'].cancel()
 
     loop.run_until_complete(asyncio.wait(asyncio.Task.all_tasks()))
