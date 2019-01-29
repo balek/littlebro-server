@@ -13,10 +13,14 @@ from .config import conf
 
 
 def getCameraByName(name):
-    return next(c for c in conf['cameras'] if c['id'] == name)
+    try:
+        return next(c for c in conf['cameras'] if c['id'] == name)
+    except StopIteration: pass
 
 
 def check_user_access(request, camera):
+    if not camera:
+        return False
     if not camera.get('groups'):
         return True
     for g in camera['groups']:
