@@ -21,8 +21,10 @@ def start(c, cams, cb):
     conf = c
     cameras = cams
     handle_motion = cb
-    server = asyncio.start_server(handle_motion_server_connection, '0.0.0.0', conf['port'])
+    server = asyncio.start_server(handle_motion_server_connection, '0.0.0.0',
+                                  conf['port'])
     asyncio.ensure_future(server)
+
 
 def stop():
     server.close()

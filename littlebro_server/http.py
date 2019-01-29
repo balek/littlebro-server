@@ -15,7 +15,8 @@ from .config import conf
 def getCameraByName(name):
     try:
         return next(c for c in conf['cameras'] if c['id'] == name)
-    except StopIteration: pass
+    except StopIteration:
+        pass
 
 
 def check_user_access(request, camera):
@@ -26,6 +27,7 @@ def check_user_access(request, camera):
     for g in camera['groups']:
         if g in request['session']['user_groups']:
             return True
+
 
 async def cameras(request):
     result = []
@@ -62,7 +64,12 @@ async def record(request):
     camera = getCameraByName(params['camera'])
     if not check_user_access(request, camera):
         raise web.HTTPForbidden()
-    return web.Response(headers={'X-Accel-Redirect': '/archive/{}/{}/{}'.format(params['date'], params['camera'], params['file'])})
+    return web.Response(
+        headers={
+            'X-Accel-Redirect':
+            '/archive/{}/{}/{}'.format(params['date'], params['camera'],
+                                       params['file'])
+        })
 
 
 async def authorize(request):
@@ -88,7 +95,8 @@ async def cors_middleware(request, handler):
             response = e
     if origin in conf['viewers']:
         response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Headers'] = request.headers.get('Access-Control-Request-Headers', '')
+        response.headers['Access-Control-Allow-Headers'] = request.headers.get(
+            'Access-Control-Request-Headers', '')
         response.headers['Access-Control-Allow-Credentials'] = 'true'
     if isinstance(response, web.HTTPException):
         raise response
@@ -104,7 +112,8 @@ async def middleware(request, handler):
             data = jwt.decode(token, conf['secret'])
             session['user_groups'] = data.get('groups', [])
             session['expires'] = time.time() + session.max_age
-        except jwt.InvalidTokenError: pass
+        except jwt.InvalidTokenError:
+            pass
 
     if session.get('expires', 0) < time.time():
         raise web.HTTPForbidden()
@@ -113,9 +122,7 @@ async def middleware(request, handler):
 
 
 class MemorySessionStorage(aiohttp_session.AbstractStorage):
-    def __init__(self, *args,
-            key_factory=lambda: uuid.uuid4().hex,
-             **kwargs):
+    def __init__(self, *args, key_factory=lambda: uuid.uuid4().hex, **kwargs):
         self.sessions = {}
         self._key_factory = key_factory
         super().__init__(*args, **kwargs)
@@ -124,8 +131,10 @@ class MemorySessionStorage(aiohttp_session.AbstractStorage):
         key = self.load_cookie(request)
         data = self.sessions.get(key)
         if key and data:
-            return aiohttp_session.Session(key, data=data, new=False, max_age=self.max_age)
-        return aiohttp_session.Session(self._key_factory(), data=None, new=True, max_age=self.max_age)
+            return aiohttp_session.Session(
+                key, data=data, new=False, max_age=self.max_age)
+        return aiohttp_session.Session(
+            self._key_factory(), data=None, new=True, max_age=self.max_age)
 
     async def save_session(self, request, response, session):
         self.sessions[session.identity] = self._get_session_data(session)
@@ -133,8 +142,10 @@ class MemorySessionStorage(aiohttp_session.AbstractStorage):
 
 
 aiohttp_session.SESSION_KEY = 'session'
-session_middleware = aiohttp_session.session_middleware(MemorySessionStorage(cookie_name='s', max_age=5*60))
-app = web.Application(middlewares=[cors_middleware, session_middleware, middleware])
+session_middleware = aiohttp_session.session_middleware(
+    MemorySessionStorage(cookie_name='s', max_age=5 * 60))
+app = web.Application(
+    middlewares=[cors_middleware, session_middleware, middleware])
 app.router.add_get('/authorize', authorize)
 app.router.add_get('/close_session', close_session)
 app.router.add_get('/cameras', cameras)

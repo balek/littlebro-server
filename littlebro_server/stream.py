@@ -58,7 +58,8 @@ def main():
 
     try:
         os.mkdir(conf['hls_dir'])
-    except FileExistsError: pass
+    except FileExistsError:
+        pass
 
     for f in os.listdir(conf['hls_dir']):
         if not f.startswith(sys.argv[1]):

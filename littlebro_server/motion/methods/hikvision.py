@@ -3,15 +3,16 @@ import xml.etree.ElementTree as ET
 
 import aiohttp
 
-
-ns = { 'hik': 'http://www.hikvision.com/ver20/XMLSchema' }
+ns = {'hik': 'http://www.hikvision.com/ver20/XMLSchema'}
 tasks = []
+
 
 async def start_camera(camera):
     username = camera.get('username', '')
     password = camera.get('password', '')
     auth = aiohttp.BasicAuth(username, password)
-    async with aiohttp.ClientSession(auth=auth, conn_timeout=10, read_timeout=0) as client:
+    async with aiohttp.ClientSession(
+            auth=auth, conn_timeout=10, read_timeout=0) as client:
         url = 'http://'
         url += camera['ip']
         if conf.get('hikvision_port'):
@@ -31,7 +32,8 @@ async def start_camera(camera):
                         if (eventType != 'VMD'):
                             continue
                         asyncio.ensure_future(handle_motion(camera))
-            except asyncio.CancelledError: raise
+            except asyncio.CancelledError:
+                raise
             except TimeoutError as ex:
                 print('TimeoutError', camera['id'], camera['ip'])
             except Exception as ex:

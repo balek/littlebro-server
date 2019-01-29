@@ -10,8 +10,8 @@ import pyinotify
 
 from .config import conf
 
-
-RECORD_PATH_FORMAT = re.compile('(\d{4})-(\d\d)-(\d\d)/([^/]+)/(\d\d)-(\d\d)-(\d\d)\.mp4$')
+RECORD_PATH_FORMAT = re.compile(
+    '(\d{4})-(\d\d)-(\d\d)/([^/]+)/(\d\d)-(\d\d)-(\d\d)\.mp4$')
 
 
 def dump_archive(archive, date=None):
@@ -55,8 +55,12 @@ def add_record(path, archive, old_archive={}):
         return False
 
     try:
-        ffprobe_output = check_output(['ffprobe', '-loglevel', 'quiet', '-show_entries', 'stream=duration', '-select_streams', 'v', path])
-        duration = ffprobe_output.decode().split('\n')[1].split('=')[1].split('.')[0]
+        ffprobe_output = check_output([
+            'ffprobe', '-loglevel', 'quiet', '-show_entries',
+            'stream=duration', '-select_streams', 'v', path
+        ])
+        duration = ffprobe_output.decode().split('\n')[1].split('=')[1].split(
+            '.')[0]
     except (CalledProcessError, IndexError) as e:
         print(e)
         return False
@@ -67,7 +71,8 @@ def add_record(path, archive, old_archive={}):
 def rm_record(path, archive):
     try:
         date, camera, time = parse_path(path)
-    except Exception: return
+    except Exception:
+        return
 
     date_archive, camera_archive = walk_archive(archive, date, camera)
 
@@ -96,14 +101,15 @@ for date in os.listdir(conf['archive_path']):
         f = open(os.path.join(conf['archive_path'], date, 'archive.json'))
         old_archive[date] = json.load(f)
         f.close()
-    except: pass
+    except:
+        pass
 
 archive = {}
 
 
 def main():
     wm = pyinotify.WatchManager()
-    mask = pyinotify.IN_CLOSE_WRITE #| pyinotify.IN_DELETE
+    mask = pyinotify.IN_CLOSE_WRITE  #| pyinotify.IN_DELETE
     handler = EventHandler()
     notifier = pyinotify.Notifier(wm, handler)
     wm.add_watch(conf['archive_path'], mask, rec=True, auto_add=True)

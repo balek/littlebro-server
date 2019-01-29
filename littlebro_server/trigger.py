@@ -11,7 +11,6 @@ def main():
         print('Usage: %s <camera_id>' % sys.argv[0], file=sys.stderr)
         exit(1)
 
-
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     for method in conf['motion_methods']:
         if method['type'] == 'tcp':

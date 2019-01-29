@@ -9,7 +9,6 @@ import shutil
 
 from ..config import conf
 
-
 exit_flag = False
 loop = asyncio.get_event_loop()
 
@@ -23,19 +22,31 @@ async def handle_motion(camera):
 
     now = datetime.now() - timedelta(seconds=3)
     date_dir_name = now.strftime('%Y-%m-%d')
-    output_dir_path = os.path.join(conf['archive_path'], date_dir_name, camera['id'])
+    output_dir_path = os.path.join(conf['archive_path'], date_dir_name,
+                                   camera['id'])
     try:
         os.makedirs(output_dir_path)
-    except FileExistsError: pass
+    except FileExistsError:
+        pass
     output_path = os.path.join(output_dir_path, now.strftime('%H-%M-%S.mp4'))
-    command = conf['ffmpeg_path'] + ' -y -loglevel error -i ' + camera['hls_path'] + ' -ss 4 -bsf:a aac_adtstoasc -c copy -movflags faststart ' + output_path
-    camera['limit_recording_timer'] = asyncio.ensure_future(asyncio.sleep(60*30))
-    process = await asyncio.create_subprocess_exec(*command.split(), stdin=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT)
+    command = conf['ffmpeg_path'] + ' -y -loglevel error -i ' + camera[
+        'hls_path'] + ' -ss 4 -bsf:a aac_adtstoasc -c copy -movflags faststart ' + output_path
+    camera['limit_recording_timer'] = asyncio.ensure_future(
+        asyncio.sleep(60 * 30))
+    process = await asyncio.create_subprocess_exec(
+        *command.split(),
+        stdin=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT)
     wait_process = asyncio.ensure_future(process.wait())
     while True:
-        camera['stop_recording_timer'] = asyncio.ensure_future(asyncio.sleep(30))
-        stop_conditions = [camera['stop_recording_timer'], camera['limit_recording_timer'], wait_process]
-        done, pending = await asyncio.wait(stop_conditions, return_when=asyncio.FIRST_COMPLETED)
+        camera['stop_recording_timer'] = asyncio.ensure_future(
+            asyncio.sleep(30))
+        stop_conditions = [
+            camera['stop_recording_timer'], camera['limit_recording_timer'],
+            wait_process
+        ]
+        done, pending = await asyncio.wait(
+            stop_conditions, return_when=asyncio.FIRST_COMPLETED)
         if camera['stop_recording_timer'].cancelled() and not exit_flag:
             continue
         for t in pending:
@@ -45,7 +56,8 @@ async def handle_motion(camera):
     camera['limit_recording_timer'] = None
     camera['stop_recording_timer'] = None
     try:
-        output, errput = await asyncio.wait_for(process.communicate('q'.encode()), 120)
+        output, errput = await asyncio.wait_for(
+            process.communicate('q'.encode()), 120)
     except asyncio.TimeoutError:
         print('Could not finish ffmpeg with "q"')
         process.kill()
@@ -69,7 +81,9 @@ def check_free_space():
         dirs.sort()
         first_dir_name = dirs[0]
         shutil.rmtree(os.path.join(conf['archive_path'], first_dir_name))
-    except IndexError: pass
+    except IndexError:
+        pass
+
 
 def check_free_space_in_executor():
     loop.run_in_executor(None, check_free_space)
@@ -81,7 +95,8 @@ for camera in cameras:
         stream = 'main'
     else:
         stream = 'extra'
-    camera['hls_path'] = os.path.join(conf['hls_dir'], camera['id'] + '_%s.m3u8' % stream)
+    camera['hls_path'] = os.path.join(conf['hls_dir'],
+                                      camera['id'] + '_%s.m3u8' % stream)
 
     if conf.get('host_prefix') and not camera.get('host'):
         camera['host'] = conf['host_prefix'] + camera['id']
@@ -107,13 +122,15 @@ def main():
     print('Motion monitoring started')
     try:
         loop.run_forever()
-    except KeyboardInterrupt: pass
+    except KeyboardInterrupt:
+        pass
 
     global exit_flag
     exit_flag = True
 
     for method_conf in conf.get('motion_methods', []):
-        module = importlib.import_module('.methods.' + method_conf['type'], __package__)
+        module = importlib.import_module('.methods.' + method_conf['type'],
+                                         __package__)
         module.stop()
 
     for camera in cameras:
