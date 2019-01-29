@@ -91,9 +91,16 @@ for camera in cameras:
 
 
 def main():
-    for method_conf in conf.get('motion_methods', []):
-        module = importlib.import_module('.methods.' + method_conf['type'], __package__)
-        module.start(method_conf, cameras, handle_motion)
+    for i, method_conf in enumerate(conf['motion_methods']):
+        method = method_conf['type']
+        module = importlib.import_module('.methods.' + method, __package__)
+        if i == 0:
+            method_cameras = filter(
+                lambda c: c.get('motion', method) == method, cameras)
+        else:
+            method_cameras = filter(lambda c: c.get('motion') == method,
+                                    cameras)
+        module.start(method_conf, method_cameras, handle_motion)
 
     check_free_space_in_executor()
 
