@@ -110,11 +110,9 @@ def main():
         method = method_conf['type']
         module = importlib.import_module('.methods.' + method, __package__)
         if i == 0:
-            method_cameras = filter(
-                lambda c: c.get('motion', method) == method, cameras)
+            method_cameras = [c for c in cameras if c.get('motion', method) == method]
         else:
-            method_cameras = filter(lambda c: c.get('motion') == method,
-                                    cameras)
+            method_cameras = [c for c in cameras if c.get('motion') == method]
         module.start(method_conf, method_cameras, handle_motion)
 
     check_free_space_in_executor()
